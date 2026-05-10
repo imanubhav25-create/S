@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Elite NEET PG 2026 | Synchronized Overlay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Orbitron:wght@500;700&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root { 
+            --elite-gold: #c5a059; 
+            --dark-gold: #8e6d2f; 
+            --cream-bg: rgba(255, 253, 245, 0.98);
+            --medical-blue: #1a2a3a;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { height: 100vh; font-family: 'Montserrat', sans-serif; background: transparent; overflow: hidden; color: var(--medical-blue); }
+
+        .dashboard { display: grid; grid-template-columns: 260px 1fr 380px; grid-template-rows: auto auto 1fr auto; gap: 15px; padding: 25px; height: 100vh; }
+
+        header, .dynamic-box, .session-box { 
+            background: var(--cream-bg); 
+            backdrop-filter: blur(10px); 
+            border: 1.5px solid var(--elite-gold); 
+            border-radius: 12px; 
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        }
+
+        header { grid-column: span 3; padding: 12px 30px; }
+        .header-flex { display: flex; justify-content: space-between; align-items: center; }
+        h1 { font-family: 'Cinzel Decorative', serif; font-size: 28px; color: var(--dark-gold); }
+        .digital-clock { font-family: 'Orbitron', sans-serif; font-size: 22px; color: var(--medical-blue); }
+
+        .slider-track { height: 8px; background: rgba(0,0,0,0.05); border-radius: 10px; position: relative; margin-top: 10px; border: 1px solid rgba(197, 160, 89, 0.2); }
+        #slider-thumb { position: absolute; height: 18px; width: 18px; background: var(--elite-gold); border: 2px solid #fff; border-radius: 50%; top: -6px; transition: left 1s; }
+
+        .session-box { 
+            grid-column: 1; grid-row: 2; padding: 8px 12px; width: fit-content; height: fit-content; 
+            background: #fff; border: 2px solid var(--dark-gold);
+        }
+        .box-title { font-family: 'Cinzel Decorative', serif; font-size: 10px; color: var(--dark-gold); border-bottom: 1px solid var(--elite-gold); padding-bottom: 2px; margin-bottom: 5px; display: flex; justify-content: space-between; }
+        #session-timer { font-family: 'Orbitron', sans-serif; font-size: 24px; text-align: center; line-height: 1.1; }
+
+        .dynamic-box { padding: 12px; height: fit-content; max-height: 100%; display: flex; flex-direction: column; }
+        .scroll-area { overflow-y: auto; flex-grow: 1; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        td, th { padding: 8px 6px; border-bottom: 1px solid rgba(0,0,0,0.05); text-align: left; }
+        .active-row { background: #fff !important; font-weight: 700; border-left: 5px solid var(--dark-gold); box-shadow: inset 0 0 10px rgba(197, 160, 89, 0.2); }
+
+        /* BREAK POPUP */
+        #break-screen { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: #fffdf5; z-index: 10000; flex-direction: column; 
+            justify-content: center; align-items: center; text-align: center; 
+        }
+        .break-gif { width: 280px; border-radius: 15px; margin: 15px 0; border: 2px solid var(--elite-gold); }
+        #break-timer { font-family: 'Orbitron', sans-serif; font-size: 50px; color: var(--dark-gold); margin: 10px 0; }
+
+        footer { grid-column: span 3; text-align: right; font-size: 11px; padding-top: 5px; font-weight: 600; color: var(--medical-blue); }
+    </style>
+</head>
+<body>
+
+    <div id="break-screen">
+        <h1 style="font-family: 'Cinzel Decorative'; color: var(--dark-gold); font-size: 32px;">REST PHASE</h1>
+        <img id="funny-gif" src="" class="break-gif">
+        <h2 id="break-msg">Refueling for the next round.</h2>
+        <div id="break-timer">00:00:00</div>
+        <p style="font-size: 11px; color: var(--dark-gold); letter-spacing: 2px;">UNTIL NEXT SESSION BEGINS</p>
+    </div>
+
+    <div class="dashboard">
+        <header>
+            <div class="header-flex">
+                <h1>NEET PG 2026</h1>
+                <div class="digital-clock" id="main-clock">--:--:-- --</div>
+                <div id="days-text" style="font-weight: 700; color: #b03a2e;">-- Days Left</div>
+            </div>
+            <div class="slider-track"><div id="slider-thumb"></div></div>
+        </header>
+
+        <div class="session-box">
+            <div class="box-title"><span>⏱️ CURRENT</span> <span id="active-session-id">#--</span></div>
+            <div id="session-timer">00:00:00</div>
+            <p id="timer-status" style="font-size: 8px; text-align: center; color: var(--elite-gold); font-weight: 700; margin-top: 2px;">SYNCED</p>
+        </div>
+
+        <div class="dynamic-box" style="grid-column: 3; grid-row: 2 / 4;">
+            <div class="box-title" style="font-size: 13px;">📅 SCHEDULE MATRIX</div>
+            <div class="scroll-area"><table id="schedule-table">
+                <thead><tr><th>ID</th><th>START</th><th>END</th></tr></thead>
+                <tbody id="schedule-body"></tbody>
+            </table></div>
+        </div>
+
+        <div class="dynamic-box" style="grid-column: 1; grid-row: 3;">
+            <div class="box-title" style="font-size: 13px;">🎯 TARGETS</div>
+            <div class="scroll-area" id="target-list"></div>
+        </div>
+
+        <footer><div id="motivation-quote">"Focus, Doctor."</div></footer>
+    </div>
+
+    <script>
+        const CSV_URL = "https://docs.google.com/spreadsheets/d/1q5H4GwTK4NTXD7KdUpNBlhhtrMUVJroW3b30AslL4HM/export?format=csv";
+        let scheduleData = [];
+        
+        const funnyGifs = [
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJieHlzZ3E4Z3J0eW4zbmNxeXp5eHl6eHl6eHl6eHl6eHl6JnB0PWEmZGl2PTE2ODQ3OTM0NTA/3o7TKVUn7iM8FMEU24/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2RqcThqOHR6ZzR6NHJ4ZHJ6ZHJ6ZHJ6ZHJ6ZHJ6ZHJ6ZHJ6ZHJ6ZHJ6JmRpdj0xNjg0NzkzNDUw/l0O9zkX7N7P6iJ9O8/giphy.gif",
+            "https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExd2RqcThqOHR6ZzR6NHJ4ZHJ6ZHJ6ZHJ6ZHJ6ZHJ6ZHJ6ZHJ6ZHJ6ZHJ6JmRpdj0xNjg0NzkzNDUw/3o7TKURv8N3F5H5B5C/giphy.gif"
+        ];
+
+        const breakMessages = [
+            "Will be back to study soon! Vo",
+            "Time to hydrate and stretch.",
+            "Rest your eyes, Doctor.",
+            "Refueling for the next round.",
+            "Deep breaths. You're doing great."
+        ];
+
+        function parseTime(t) {
+            if (!t) return null;
+            const now = new Date();
+            const match = t.trim().toUpperCase().match(/(\d+):(\d+)\s*(AM|PM)?/);
+            if (!match) return null;
+            let [_, h, m, mod] = match;
+            h = parseInt(h); m = parseInt(m);
+            if (mod === 'PM' && h < 12) h += 12;
+            if (mod === 'AM' && h === 12) h = 0;
+            return new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0);
+        }
+
+        async function fetchSheet() {
+            try {
+                const res = await fetch(CSV_URL);
+                const text = await res.text();
+                scheduleData = text.split('\n').map(r => r.split(',')).slice(1);
+                renderUI();
+            } catch(e) { console.error("Sync Failure"); }
+        }
+
+        function renderUI() {
+            const tbody = document.getElementById('schedule-body');
+            const tlist = document.getElementById('target-list');
+            tbody.innerHTML = ""; tlist.innerHTML = "";
+            scheduleData.forEach((row, i) => {
+                if(!row[0] && !row[1]) return;
+                const tr = document.createElement('tr');
+                tr.id = `row-${i}`;
+                tr.innerHTML = `<td>${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td>`;
+                tbody.appendChild(tr);
+
+                if(row[3]) {
+                    const status = (row[4]||"").trim();
+                    const emoji = status === "Complete" ? "✅" : (status === "Working" ? "📖" : "❌");
+                    tlist.innerHTML += `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:11px;"><span>${row[3]}</span><span>${emoji}</span></div>`;
+                }
+            });
+        }
+
+        function engine() {
+            const now = new Date();
+            document.getElementById('main-clock').innerText = now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit', hour12: true});
+
+            const targetDate = new Date("August 30, 2026");
+            const daysLeft = Math.ceil((targetDate - now) / (1000 * 60 * 60 * 24));
+            document.getElementById('days-text').innerText = `${daysLeft} Days Left`;
+            document.getElementById('slider-thumb').style.left = `${Math.max(0, Math.min(100, ((120 - daysLeft) / 120) * 100))}%`;
+
+            let activeFound = false;
+            let currentIsBreak = false;
+            let nextSession = null;
+
+            scheduleData.forEach((row, i) => {
+                const start = parseTime(row[1]);
+                const end = parseTime(row[2]);
+                const rowEl = document.getElementById(`row-${i}`);
+
+                if (start && end) {
+                    if (now >= start && now <= end) {
+                        activeFound = true;
+                        // Trigger break if "break" is in the Session ID (Column A)
+                        if(row[0].toLowerCase().includes('break')) currentIsBreak = true;
+                        
+                        if(rowEl) rowEl.className = "active-row";
+                        document.getElementById('active-session-id').innerText = row[0];
+                        const rem = end - now;
+                        document.getElementById('session-timer').innerText = new Date(rem).toISOString().substr(11, 8);
+                    } else {
+                        if(rowEl) rowEl.className = "";
+                        if (start > now && (!nextSession || start < nextSession.start)) {
+                            nextSession = { start, id: row[0] };
+                        }
+                    }
+                }
+            });
+
+            const screen = document.getElementById('break-screen');
+            const gifEl = document.getElementById('funny-gif');
+            const msgEl = document.getElementById('break-msg');
+            
+            // Popup triggers if no session is active OR if the current session is a "break"
+            if (currentIsBreak || !activeFound) {
+                if(screen.style.display !== "flex") {
+                    gifEl.src = funnyGifs[Math.floor(Math.random() * funnyGifs.length)];
+                    msgEl.innerText = breakMessages[Math.floor(Math.random() * breakMessages.length)];
+                    screen.style.display = "flex";
+                }
+                if (nextSession) {
+                    const diff = nextSession.start - now;
+                    document.getElementById('break-timer').innerText = new Date(diff).toISOString().substr(11, 8);
+                } else {
+                    document.getElementById('break-timer').innerText = "DONE";
+                }
+            } else {
+                screen.style.display = "none";
+            }
+        }
+
+        setInterval(engine, 1000);
+        setInterval(fetchSheet, 60000);
+        fetchSheet();
+    </script>
+</body>
+</html>
